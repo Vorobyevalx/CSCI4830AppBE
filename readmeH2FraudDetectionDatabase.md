@@ -1,5 +1,12 @@
 # H2 Fraud Detection Database - Complete Setup
-
+securebank-fraud-db
+Welcome2025!
+securebank
+Welcome2025!
+Connection name:
+planar-contact-474800-i8:us-central1:securebank-fraud-db
+Public IP address:
+107.178.210.174
 ## 🎯 **Project Overview**
 
 This document outlines the complete fraud detection database setup for the SecureBank Hub backend application. The database is designed specifically for fraud detection and transaction analysis, with a focus on identifying suspicious activities.
