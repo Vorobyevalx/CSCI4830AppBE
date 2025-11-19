@@ -14,7 +14,7 @@ public class Transaction {
     private Long id;
     
     @NotNull(message = "Account is required")
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(targetEntity = Account.class)
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
     

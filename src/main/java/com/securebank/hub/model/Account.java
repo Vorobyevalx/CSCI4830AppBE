@@ -19,7 +19,7 @@ public class Account {
     private String accountNumber;
     
     @NotNull(message = "User is required")
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(targetEntity = User.class)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
     
