@@ -4,8 +4,11 @@ import com.securebank.hub.model.Account;
 import com.securebank.hub.model.User;
 import com.securebank.hub.repository.AccountRepository;
 import com.securebank.hub.repository.UserRepository;
+import com.securebank.hub.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +23,9 @@ public class AccountController {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private UserService userService;
     
     @GetMapping
     public List<Account> getAllAccounts() {
@@ -47,17 +53,52 @@ public class AccountController {
     
     @PostMapping
     public ResponseEntity<Account> createAccount(@RequestBody Account account) {
-        // Validate user exists
-        if (account.getUser() == null || account.getUser().getId() == null) {
-            return ResponseEntity.badRequest().build();
+        // Get current authenticated user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(401).build();
         }
         
-        Optional<User> user = userRepository.findById(account.getUser().getId());
-        if (user.isEmpty()) {
-            return ResponseEntity.badRequest().build();
+        // Find user by username from authentication
+        Optional<User> userOpt = userService.findByUsername(authentication.getName());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(401).build();
         }
         
-        account.setUser(user.get());
+        User currentUser = userOpt.get();
+        
+        // If user ID is provided in request, validate it matches current user (for admin operations)
+        if (account.getUser() != null && account.getUser().getId() != null) {
+            if (!account.getUser().getId().equals(currentUser.getId())) {
+                // Only allow if current user is admin
+                if (!currentUser.getRole().name().equals("ADMIN")) {
+                    return ResponseEntity.status(403).build();
+                }
+                // Admin can create account for other users
+                Optional<User> targetUser = userRepository.findById(account.getUser().getId());
+                if (targetUser.isEmpty()) {
+                    return ResponseEntity.badRequest().build();
+                }
+                account.setUser(targetUser.get());
+            } else {
+                account.setUser(currentUser);
+            }
+        } else {
+            // No user specified, use current authenticated user
+            account.setUser(currentUser);
+        }
+        
+        // Set default values if not provided
+        if (account.getAccountType() == null) {
+            account.setAccountType(com.securebank.hub.model.AccountType.CHECKING);
+        }
+        if (account.getBalance() == null) {
+            account.setBalance(java.math.BigDecimal.ZERO);
+        }
+        if (account.getIsActive() == null) {
+            account.setIsActive(true);
+        }
+        
         Account savedAccount = accountRepository.save(account);
         return ResponseEntity.ok(savedAccount);
     }
