@@ -53,6 +53,13 @@ public class TransactionController {
         return "unknown";
     }
     
+    private String getUsernameFromAccount(Account account) {
+        if (account != null && account.getUser() != null) {
+            return account.getUser().getUsername();
+        }
+        return getCurrentUsername(); // Fallback to SecurityContext
+    }
+    
     @GetMapping
     public ResponseEntity<?> getAllTransactions(
             @RequestParam(defaultValue = "0") int page,
@@ -159,8 +166,8 @@ public class TransactionController {
         // Save again with fraud analysis results
         savedTransaction = transactionRepository.save(savedTransaction);
         
-        // Audit log transaction creation
-        String username = getCurrentUsername();
+        // Audit log transaction creation - get username from account's user relationship
+        String username = getUsernameFromAccount(savedTransaction.getAccount());
         auditLogService.logTransactionCreation(
             savedTransaction.getId(),
             savedTransaction.getAccount().getId(),
