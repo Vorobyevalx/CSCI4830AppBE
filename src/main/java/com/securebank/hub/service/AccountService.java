@@ -1,5 +1,8 @@
 package com.securebank.hub.service;
 
+import com.securebank.hub.exception.InsufficientFundsException;
+import com.securebank.hub.exception.ResourceNotFoundException;
+import com.securebank.hub.exception.ValidationException;
 import com.securebank.hub.model.Account;
 import com.securebank.hub.model.Transaction;
 import com.securebank.hub.model.TransactionType;
@@ -23,15 +26,15 @@ public class AccountService {
     @Transactional
     public Account updateBalance(Transaction transaction) {
         if (transaction.getAccount() == null || transaction.getAccount().getId() == null) {
-            throw new RuntimeException("Transaction must have a valid account");
+            throw new ValidationException("Transaction must have a valid account");
         }
         
         Account account = accountRepository.findById(transaction.getAccount().getId())
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Account", transaction.getAccount().getId()));
         
         BigDecimal amount = transaction.getAmount();
         if (amount == null) {
-            throw new RuntimeException("Transaction amount cannot be null");
+            throw new ValidationException("Transaction amount cannot be null");
         }
         
         BigDecimal currentBalance = account.getBalance() != null ? account.getBalance() : BigDecimal.ZERO;
@@ -53,13 +56,13 @@ public class AccountService {
             case FEE:
                 // Check for insufficient funds
                 if (currentBalance.compareTo(amount) < 0) {
-                    throw new RuntimeException("Insufficient funds. Current balance: $" + currentBalance + ", Required: $" + amount);
+                    throw new InsufficientFundsException(currentBalance, amount);
                 }
                 newBalance = currentBalance.subtract(amount);
                 break;
                 
             default:
-                throw new RuntimeException("Unknown transaction type: " + type);
+                throw new ValidationException("Unknown transaction type: " + type);
         }
         
         account.setBalance(newBalance);
@@ -71,7 +74,7 @@ public class AccountService {
      */
     public Account getAccountById(Long accountId) {
         return accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Account", accountId));
     }
 }
 

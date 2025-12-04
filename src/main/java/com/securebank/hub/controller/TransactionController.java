@@ -1,5 +1,7 @@
 package com.securebank.hub.controller;
 
+import com.securebank.hub.exception.ResourceNotFoundException;
+import com.securebank.hub.exception.ValidationException;
 import com.securebank.hub.model.Account;
 import com.securebank.hub.model.FraudStatus;
 import com.securebank.hub.model.Transaction;
@@ -20,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/transactions")
@@ -87,9 +88,9 @@ public class TransactionController {
     
     @GetMapping("/{id}")
     public ResponseEntity<Transaction> getTransactionById(@PathVariable Long id) {
-        Optional<Transaction> transaction = transactionRepository.findById(id);
-        return transaction.map(ResponseEntity::ok)
-                         .orElse(ResponseEntity.notFound().build());
+        Transaction transaction = transactionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction", id));
+        return ResponseEntity.ok(transaction);
     }
     
     @GetMapping("/account/{accountId}")
@@ -115,53 +116,45 @@ public class TransactionController {
     }
     
     @PostMapping
-    public ResponseEntity<?> createTransaction(@RequestBody Transaction transaction) {
-        try {
-            // Validate account exists and load it from database
-            if (transaction.getAccount() == null || transaction.getAccount().getId() == null) {
-                return ResponseEntity.badRequest().body("{\"error\": \"Account is required\"}");
-            }
-            
-            // Load account from database (important for foreign key constraint)
-            Optional<Account> accountOpt = accountRepository.findById(transaction.getAccount().getId());
-            if (accountOpt.isEmpty()) {
-                return ResponseEntity.badRequest().body("{\"error\": \"Account not found\"}");
-            }
-            
-            // Set the loaded account (managed entity)
-            transaction.setAccount(accountOpt.get());
-            
-            // Save transaction first (so fraud detection can query it)
-            Transaction savedTransaction = transactionRepository.save(transaction);
-            
-            // Run fraud detection analysis (after saving)
-            savedTransaction = fraudDetectionService.analyzeTransaction(savedTransaction);
-            
-            // Update account balance
-            accountService.updateBalance(savedTransaction);
-            
-            // Auto-approve if safe
-            fraudDetectionService.autoApproveIfSafe(savedTransaction);
-            
-            // Save again with fraud analysis results
-            savedTransaction = transactionRepository.save(savedTransaction);
-            
-            return ResponseEntity.ok(savedTransaction);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("{\"error\": \"" + e.getMessage() + "\"}");
+    @Transactional
+    public ResponseEntity<Transaction> createTransaction(@RequestBody Transaction transaction) {
+        // Validate account exists and load it from database
+        if (transaction.getAccount() == null || transaction.getAccount().getId() == null) {
+            throw new ValidationException("Account is required");
         }
+        
+        // Load account from database (important for foreign key constraint)
+        Account account = accountRepository.findById(transaction.getAccount().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Account", transaction.getAccount().getId()));
+        
+        // Set the loaded account (managed entity)
+        transaction.setAccount(account);
+        
+        // Save transaction first (so fraud detection can query it)
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        
+        // Run fraud detection analysis (after saving)
+        savedTransaction = fraudDetectionService.analyzeTransaction(savedTransaction);
+        
+        // Update account balance (will throw InsufficientFundsException if needed)
+        accountService.updateBalance(savedTransaction);
+        
+        // Auto-approve if safe
+        fraudDetectionService.autoApproveIfSafe(savedTransaction);
+        
+        // Save again with fraud analysis results
+        savedTransaction = transactionRepository.save(savedTransaction);
+        
+        return ResponseEntity.ok(savedTransaction);
     }
     
     @PutMapping("/{id}/fraud-status")
     public ResponseEntity<Transaction> updateFraudStatus(@PathVariable Long id, 
                                                         @RequestParam FraudStatus status,
                                                         @RequestParam(required = false) String reasons) {
-        Optional<Transaction> transactionOpt = transactionRepository.findById(id);
-        if (transactionOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
+        Transaction transaction = transactionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction", id));
         
-        Transaction transaction = transactionOpt.get();
         transaction.setFraudStatus(status);
         if (reasons != null) {
             transaction.setFraudReasons(reasons);

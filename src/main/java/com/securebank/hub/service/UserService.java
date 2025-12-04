@@ -1,5 +1,6 @@
 package com.securebank.hub.service;
 
+import com.securebank.hub.exception.ValidationException;
 import com.securebank.hub.model.User;
 import com.securebank.hub.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,12 +23,12 @@ public class UserService {
     public User registerUser(User user) {
         // Check if username already exists
         if (userRepository.existsByUsername(user.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new ValidationException("Username already exists");
         }
         
         // Check if email already exists
         if (userRepository.existsByEmail(user.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new ValidationException("Email already exists");
         }
         
         // Hash password before saving
