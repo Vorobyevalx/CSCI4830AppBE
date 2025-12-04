@@ -1,12 +1,16 @@
 package com.securebank.hub.config;
 
+import com.securebank.hub.security.JwtAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -19,6 +23,9 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+    
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -28,13 +35,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
-                // Allow authentication endpoints
+                // Allow authentication endpoints (public)
                 .requestMatchers("/api/auth/**").permitAll()
-                // Allow health check
+                // Allow health check (public)
                 .requestMatchers("/api/health").permitAll()
-                // Allow all API endpoints (will add JWT protection later)
-                .requestMatchers("/api/**").permitAll()
+                // Protect all other API endpoints (require JWT)
+                .requestMatchers("/api/**").authenticated()
                 // Allow static resources (React frontend)
                 .requestMatchers("/", "/index.html", "/static/**", "/favicon.ico", "/manifest.json", "/robots.txt", "/asset-manifest.json").permitAll()
                 // Allow H2 console for local development
@@ -44,6 +52,7 @@ public class SecurityConfig {
             )
             .csrf(csrf -> csrf.disable())  // Disabled for API development, enable for production
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .headers(headers -> headers
                 // Fix deprecation: use frameOptions with customizer
                 .frameOptions(frameOptions -> frameOptions.deny())
