@@ -62,7 +62,6 @@ public class TransactionController {
     }
     
     @PostMapping
-    @Transactional
     public ResponseEntity<?> createTransaction(@RequestBody Transaction transaction) {
         try {
             // Validate account exists
@@ -70,16 +69,21 @@ public class TransactionController {
                 return ResponseEntity.badRequest().body("{\"error\": \"Account is required\"}");
             }
             
-            // Run fraud detection analysis
-            transaction = fraudDetectionService.analyzeTransaction(transaction);
+            // Save transaction first (so fraud detection can query it)
+            Transaction savedTransaction = transactionRepository.save(transaction);
+            
+            // Run fraud detection analysis (after saving)
+            savedTransaction = fraudDetectionService.analyzeTransaction(savedTransaction);
             
             // Update account balance
-            accountService.updateBalance(transaction);
+            accountService.updateBalance(savedTransaction);
             
             // Auto-approve if safe
-            fraudDetectionService.autoApproveIfSafe(transaction);
+            fraudDetectionService.autoApproveIfSafe(savedTransaction);
             
-            Transaction savedTransaction = transactionRepository.save(transaction);
+            // Save again with fraud analysis results
+            savedTransaction = transactionRepository.save(savedTransaction);
+            
             return ResponseEntity.ok(savedTransaction);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body("{\"error\": \"" + e.getMessage() + "\"}");

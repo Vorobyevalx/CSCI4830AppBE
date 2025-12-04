@@ -103,11 +103,21 @@ public class FraudDetectionService {
             return false;
         }
         
-        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(RAPID_TRANSACTION_MINUTES);
-        List<Transaction> recentTransactions = transactionRepository
-                .findRecentTransactionsByAccount(transaction.getAccount().getId(), fiveMinutesAgo);
-        
-        return recentTransactions.size() >= RAPID_TRANSACTION_COUNT;
+        try {
+            LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(RAPID_TRANSACTION_MINUTES);
+            List<Transaction> recentTransactions = transactionRepository
+                    .findRecentTransactionsByAccount(transaction.getAccount().getId(), fiveMinutesAgo);
+            
+            // Exclude the current transaction from the count
+            long count = recentTransactions.stream()
+                    .filter(t -> !t.getId().equals(transaction.getId()))
+                    .count();
+            
+            return count >= RAPID_TRANSACTION_COUNT;
+        } catch (Exception e) {
+            // If query fails, don't flag as fraud
+            return false;
+        }
     }
     
     /**
@@ -161,20 +171,27 @@ public class FraudDetectionService {
             return false;
         }
         
-        LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
-        List<Transaction> recentTransactions = transactionRepository
-                .findRecentTransactionsByAccount(
-                    transaction.getAccount() != null ? transaction.getAccount().getId() : null,
-                    oneHourAgo
-                );
+        if (transaction.getAccount() == null || transaction.getAccount().getId() == null) {
+            return false;
+        }
         
-        // Count transactions from same IP in last hour
-        long sameIPCount = recentTransactions.stream()
-                .filter(t -> transaction.getIpAddress().equals(t.getIpAddress()))
-                .count();
-        
-        // If more than 3 transactions from same IP in an hour, suspicious
-        return sameIPCount > 3;
+        try {
+            LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
+            List<Transaction> recentTransactions = transactionRepository
+                    .findRecentTransactionsByAccount(transaction.getAccount().getId(), oneHourAgo);
+            
+            // Count transactions from same IP in last hour (excluding current transaction)
+            long sameIPCount = recentTransactions.stream()
+                    .filter(t -> !t.getId().equals(transaction.getId()))
+                    .filter(t -> transaction.getIpAddress().equals(t.getIpAddress()))
+                    .count();
+            
+            // If more than 3 transactions from same IP in an hour, suspicious
+            return sameIPCount > 3;
+        } catch (Exception e) {
+            // If query fails, don't flag as fraud
+            return false;
+        }
     }
     
     /**
