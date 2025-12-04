@@ -1,7 +1,9 @@
 package com.securebank.hub.controller;
 
+import com.securebank.hub.model.Account;
 import com.securebank.hub.model.FraudStatus;
 import com.securebank.hub.model.Transaction;
+import com.securebank.hub.repository.AccountRepository;
 import com.securebank.hub.repository.TransactionRepository;
 import com.securebank.hub.service.AccountService;
 import com.securebank.hub.service.FraudDetectionService;
@@ -26,6 +28,9 @@ public class TransactionController {
     
     @Autowired
     private AccountService accountService;
+    
+    @Autowired
+    private AccountRepository accountRepository;
     
     @GetMapping
     public List<Transaction> getAllTransactions() {
@@ -64,10 +69,19 @@ public class TransactionController {
     @PostMapping
     public ResponseEntity<?> createTransaction(@RequestBody Transaction transaction) {
         try {
-            // Validate account exists
+            // Validate account exists and load it from database
             if (transaction.getAccount() == null || transaction.getAccount().getId() == null) {
                 return ResponseEntity.badRequest().body("{\"error\": \"Account is required\"}");
             }
+            
+            // Load account from database (important for foreign key constraint)
+            Optional<Account> accountOpt = accountRepository.findById(transaction.getAccount().getId());
+            if (accountOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body("{\"error\": \"Account not found\"}");
+            }
+            
+            // Set the loaded account (managed entity)
+            transaction.setAccount(accountOpt.get());
             
             // Save transaction first (so fraud detection can query it)
             Transaction savedTransaction = transactionRepository.save(transaction);
