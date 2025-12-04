@@ -4,6 +4,8 @@ import com.securebank.hub.model.Account;
 import com.securebank.hub.model.FraudStatus;
 import com.securebank.hub.model.Transaction;
 import com.securebank.hub.model.TransactionType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,13 +22,18 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     
     List<Transaction> findByAccountId(Long accountId);
     
+    // Paginated versions
+    Page<Transaction> findByAccountId(Long accountId, Pageable pageable);
+    
+    Page<Transaction> findByTransactionType(TransactionType transactionType, Pageable pageable);
+    
+    Page<Transaction> findByTransactionTimestampBetween(LocalDateTime start, LocalDateTime end, Pageable pageable);
+    
+    Page<Transaction> findByAccountIdAndTransactionTimestampBetween(Long accountId, LocalDateTime start, LocalDateTime end, Pageable pageable);
+    
     List<Transaction> findByFraudStatus(FraudStatus fraudStatus);
     
-    List<Transaction> findByTransactionType(TransactionType transactionType);
-    
     List<Transaction> findByAmountGreaterThan(BigDecimal amount);
-    
-    List<Transaction> findByTransactionTimestampBetween(LocalDateTime start, LocalDateTime end);
     
     // Fraud Detection Queries
     @Query("SELECT t FROM Transaction t WHERE t.fraudStatus = :status ORDER BY t.transactionTimestamp DESC")
