@@ -2,6 +2,7 @@ package com.securebank.hub.dto;
 
 public class AuthResponse {
     private String token;
+    private String refreshToken;
     private String type = "Bearer";
     private String username;
     private String role;
@@ -10,6 +11,13 @@ public class AuthResponse {
     
     public AuthResponse(String token, String username, String role) {
         this.token = token;
+        this.username = username;
+        this.role = role;
+    }
+    
+    public AuthResponse(String token, String refreshToken, String username, String role) {
+        this.token = token;
+        this.refreshToken = refreshToken;
         this.username = username;
         this.role = role;
     }
@@ -44,6 +52,14 @@ public class AuthResponse {
     
     public void setRole(String role) {
         this.role = role;
+    }
+    
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+    
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 }
 

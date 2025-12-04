@@ -1,5 +1,6 @@
 package com.securebank.hub.security;
 
+import com.securebank.hub.exception.UnauthorizedException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -21,6 +22,9 @@ public class JwtUtil {
     
     @Value("${jwt.expiration:900000}") // 15 minutes default
     private Long expiration;
+    
+    @Value("${jwt.refresh-expiration:604800000}") // 7 days default
+    private Long refreshExpiration;
     
     private SecretKey getSigningKey() {
         // Ensure key is at least 256 bits (32 bytes) for HS256
@@ -86,6 +90,40 @@ public class JwtUtil {
             return !isTokenExpired(token);
         } catch (Exception e) {
             return false;
+        }
+    }
+    
+    /**
+     * Generate a refresh token with longer expiration
+     */
+    public String generateRefreshToken(String username) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("type", "refresh");
+        return Jwts.builder()
+                .claims(claims)
+                .subject(username)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + refreshExpiration))
+                .signWith(getSigningKey())
+                .compact();
+    }
+    
+    /**
+     * Validate refresh token and extract username
+     */
+    public String validateAndExtractUsernameFromRefreshToken(String refreshToken) {
+        try {
+            Claims claims = extractAllClaims(refreshToken);
+            String type = claims.get("type", String.class);
+            if (!"refresh".equals(type)) {
+                throw new UnauthorizedException("Invalid token type");
+            }
+            if (isTokenExpired(refreshToken)) {
+                throw new UnauthorizedException("Refresh token expired");
+            }
+            return claims.getSubject();
+        } catch (Exception e) {
+            throw new UnauthorizedException("Invalid refresh token: " + e.getMessage());
         }
     }
 }
