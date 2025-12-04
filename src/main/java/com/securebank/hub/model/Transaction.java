@@ -1,8 +1,10 @@
 package com.securebank.hub.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.securebank.hub.validation.PositiveAmount;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -23,28 +25,37 @@ public class Transaction {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "transactions", "user"})
     private Account account;
     
+    @NotNull(message = "Transaction type is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TransactionType transactionType;
     
+    @NotNull(message = "Amount is required")
+    @PositiveAmount(message = "Amount must be greater than zero")
     @Column(name = "amount", precision = 19, scale = 2, nullable = false)
     private BigDecimal amount;
     
+    @Size(max = 500, message = "Description must not exceed 500 characters")
     @Column(name = "description")
     private String description;
     
+    @Size(max = 100, message = "Merchant name must not exceed 100 characters")
     @Column(name = "merchant_name")
     private String merchantName;
     
+    @Size(max = 50, message = "Merchant category must not exceed 50 characters")
     @Column(name = "merchant_category")
     private String merchantCategory;
     
+    @Size(max = 100, message = "Location must not exceed 100 characters")
     @Column(name = "location")
     private String location;
     
+    @Size(max = 45, message = "IP address must not exceed 45 characters")
     @Column(name = "ip_address")
     private String ipAddress;
     
+    @Size(max = 255, message = "Device fingerprint must not exceed 255 characters")
     @Column(name = "device_fingerprint")
     private String deviceFingerprint;
     

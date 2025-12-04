@@ -1,6 +1,7 @@
 package com.securebank.hub.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.securebank.hub.validation.ValidAccountNumber;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,6 +20,7 @@ public class Account {
     private Long id;
     
     @NotBlank(message = "Account number is required")
+    @ValidAccountNumber
     @Column(name = "account_number", unique = true, nullable = false)
     private String accountNumber;
     
