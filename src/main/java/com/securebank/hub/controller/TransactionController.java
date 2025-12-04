@@ -9,8 +9,11 @@ import com.securebank.hub.model.TransactionType;
 import com.securebank.hub.repository.AccountRepository;
 import com.securebank.hub.repository.TransactionRepository;
 import com.securebank.hub.service.AccountService;
+import com.securebank.hub.service.AuditLogService;
 import com.securebank.hub.service.FraudDetectionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +41,17 @@ public class TransactionController {
     
     @Autowired
     private AccountRepository accountRepository;
+    
+    @Autowired
+    private AuditLogService auditLogService;
+    
+    private String getCurrentUsername() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof com.securebank.hub.model.User) {
+            return ((com.securebank.hub.model.User) authentication.getPrincipal()).getUsername();
+        }
+        return "unknown";
+    }
     
     @GetMapping
     public ResponseEntity<?> getAllTransactions(
@@ -144,6 +158,16 @@ public class TransactionController {
         
         // Save again with fraud analysis results
         savedTransaction = transactionRepository.save(savedTransaction);
+        
+        // Audit log transaction creation
+        String username = getCurrentUsername();
+        auditLogService.logTransactionCreation(
+            savedTransaction.getId(),
+            savedTransaction.getAccount().getId(),
+            savedTransaction.getTransactionType().name(),
+            savedTransaction.getAmount().doubleValue(),
+            username
+        );
         
         return ResponseEntity.ok(savedTransaction);
     }

@@ -3,6 +3,7 @@ package com.securebank.hub.service;
 import com.securebank.hub.model.FraudStatus;
 import com.securebank.hub.model.Transaction;
 import com.securebank.hub.repository.TransactionRepository;
+import com.securebank.hub.service.AuditLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,9 @@ public class FraudDetectionService {
     
     @Autowired
     private TransactionRepository transactionRepository;
+    
+    @Autowired
+    private AuditLogService auditLogService;
     
     // Fraud detection thresholds
     private static final BigDecimal HIGH_AMOUNT_THRESHOLD = new BigDecimal("10000.00");
@@ -80,8 +84,21 @@ public class FraudDetectionService {
         // Update transaction with fraud analysis
         transaction.setFraudScore(fraudScore);
         transaction.setFraudStatus(fraudStatus);
-        if (!fraudReasons.isEmpty()) {
-            transaction.setFraudReasons(String.join(", ", fraudReasons));
+        String fraudReasonsStr = fraudReasons.isEmpty() ? null : String.join(", ", fraudReasons);
+        transaction.setFraudReasons(fraudReasonsStr);
+        
+        // Audit log fraud detection (only if fraud was detected)
+        if (fraudStatus == FraudStatus.FLAGGED || fraudStatus == FraudStatus.UNDER_REVIEW) {
+            String username = transaction.getAccount() != null && transaction.getAccount().getUser() != null 
+                ? transaction.getAccount().getUser().getUsername() 
+                : "unknown";
+            auditLogService.logFraudDetection(
+                transaction.getId(),
+                fraudStatus.name(),
+                fraudScore,
+                fraudReasonsStr,
+                username
+            );
         }
         
         return transaction;
