@@ -3,6 +3,7 @@ package com.securebank.hub.controller;
 import com.securebank.hub.model.FraudStatus;
 import com.securebank.hub.model.Transaction;
 import com.securebank.hub.repository.TransactionRepository;
+import com.securebank.hub.service.FraudDetectionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,9 @@ public class TransactionController {
     
     @Autowired
     private TransactionRepository transactionRepository;
+    
+    @Autowired
+    private FraudDetectionService fraudDetectionService;
     
     @GetMapping
     public List<Transaction> getAllTransactions() {
@@ -53,8 +57,15 @@ public class TransactionController {
     }
     
     @PostMapping
-    public Transaction createTransaction(@RequestBody Transaction transaction) {
-        return transactionRepository.save(transaction);
+    public ResponseEntity<Transaction> createTransaction(@RequestBody Transaction transaction) {
+        // Run fraud detection analysis
+        transaction = fraudDetectionService.analyzeTransaction(transaction);
+        
+        // Auto-approve if safe
+        fraudDetectionService.autoApproveIfSafe(transaction);
+        
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        return ResponseEntity.ok(savedTransaction);
     }
     
     @PutMapping("/{id}/fraud-status")

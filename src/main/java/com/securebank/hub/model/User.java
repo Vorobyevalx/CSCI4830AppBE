@@ -1,9 +1,13 @@
 package com.securebank.hub.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.time.LocalDateTime;
 
 @Entity
@@ -27,6 +31,7 @@ public class User {
     @NotBlank(message = "Password is required")
     @Size(min = 8, message = "Password must be at least 8 characters")
     @Column(nullable = false)
+    @JsonIgnore
     private String password;
     
     @NotBlank(message = "First name is required")
@@ -115,5 +120,14 @@ public class User {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+    
+    // Serialization protection (from day2.md security requirements)
+    private final void writeObject(ObjectOutputStream out) throws IOException {
+        throw new IOException("User object cannot be serialized");
+    }
+    
+    private final void readObject(ObjectInputStream in) throws IOException {
+        throw new IOException("User object cannot be deserialized");
     }
 }

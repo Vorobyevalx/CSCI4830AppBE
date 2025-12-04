@@ -1,7 +1,11 @@
 package com.securebank.hub.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -16,6 +20,7 @@ public class Transaction {
     @NotNull(message = "Account is required")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "transactions", "user"})
     private Account account;
     
     @Enumerated(EnumType.STRING)
@@ -122,5 +127,14 @@ public class Transaction {
             transactionTimestamp = LocalDateTime.now();
         }
         createdAt = LocalDateTime.now();
+    }
+    
+    // Serialization protection (from day2.md security requirements)
+    private final void writeObject(ObjectOutputStream out) throws IOException {
+        throw new IOException("Transaction object cannot be serialized");
+    }
+    
+    private final void readObject(ObjectInputStream in) throws IOException {
+        throw new IOException("Transaction object cannot be deserialized");
     }
 }

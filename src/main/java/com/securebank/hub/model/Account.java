@@ -1,8 +1,12 @@
 package com.securebank.hub.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -21,6 +25,7 @@ public class Account {
     @NotNull(message = "User is required")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "accounts"})
     private User user;
     
     @Enumerated(EnumType.STRING)
@@ -84,5 +89,14 @@ public class Account {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+    
+    // Serialization protection (from day2.md security requirements)
+    private final void writeObject(ObjectOutputStream out) throws IOException {
+        throw new IOException("Account object cannot be serialized");
+    }
+    
+    private final void readObject(ObjectInputStream in) throws IOException {
+        throw new IOException("Account object cannot be deserialized");
     }
 }
