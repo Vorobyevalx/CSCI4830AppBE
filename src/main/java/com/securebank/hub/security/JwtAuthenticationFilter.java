@@ -32,6 +32,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         
+        // Skip JWT processing for static resources and public endpoints
+        String path = request.getRequestURI();
+        if (path.startsWith("/static/") || 
+            path.startsWith("/api/auth/") || 
+            path.equals("/") || 
+            path.equals("/index.html") ||
+            path.startsWith("/favicon") ||
+            path.startsWith("/manifest") ||
+            path.startsWith("/asset-manifest") ||
+            path.startsWith("/robots.txt") ||
+            path.equals("/api/health")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         // Get token from Authorization header
         String authHeader = request.getHeader("Authorization");
         String token = null;
