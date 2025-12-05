@@ -44,25 +44,15 @@ public class AccountService {
         
         // Determine if this increases or decreases balance
         switch (type) {
-            case DEPOSIT:
-            case TRANSFER_IN:
-            case REFUND:
-                newBalance = currentBalance.add(amount);
-                break;
-                
-            case WITHDRAWAL:
-            case TRANSFER_OUT:
-            case PURCHASE:
-            case FEE:
+            case DEPOSIT, TRANSFER_IN, REFUND -> newBalance = currentBalance.add(amount);
+            case WITHDRAWAL, TRANSFER_OUT, PURCHASE, FEE -> {
                 // Check for insufficient funds
                 if (currentBalance.compareTo(amount) < 0) {
                     throw new InsufficientFundsException(currentBalance, amount);
                 }
                 newBalance = currentBalance.subtract(amount);
-                break;
-                
-            default:
-                throw new ValidationException("Unknown transaction type: " + type);
+            }
+            default -> throw new ValidationException("Unknown transaction type: " + type);
         }
         
         account.setBalance(newBalance);
