@@ -59,7 +59,15 @@ public class SecurityConfig {
                 // Fix deprecation: use frameOptions with customizer
                 .frameOptions(frameOptions -> frameOptions.deny())
                 // Enhanced security headers (from day2.md)
-                .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
+                // Allow 'unsafe-eval' for Selenium IDE testing, 'unsafe-inline' for React
+                .contentSecurityPolicy(csp -> csp.policyDirectives(
+                    "default-src 'self'; " +
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                    "style-src 'self' 'unsafe-inline'; " +
+                    "img-src 'self' data:; " +
+                    "font-src 'self' data:; " +
+                    "connect-src 'self' http://34.42.31.237:8080 http://localhost:8080"
+                ))
             );
         
         return http.build();
