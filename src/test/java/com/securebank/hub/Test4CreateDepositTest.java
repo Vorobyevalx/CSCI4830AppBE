@@ -79,7 +79,11 @@ public class Test4CreateDepositTest {
     boolean hasAccounts = false;
     try {
       // Wait a bit to see if accounts load
-      Thread.sleep(2000);
+      try {
+        Thread.sleep(2000);
+      } catch (InterruptedException ie) {
+        Thread.currentThread().interrupt();
+      }
       // Check if any account elements exist
       java.util.List<WebElement> accounts = driver.findElements(By.cssSelector(".acct"));
       if (accounts.size() > 0 && !accounts.get(0).getText().contains("No accounts")) {
@@ -122,7 +126,11 @@ public class Test4CreateDepositTest {
       // Wait for success and account to appear (with longer timeout)
       WebDriverWait longWait = new WebDriverWait(driver, Duration.ofSeconds(20));
       longWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".alert-success")));
-      Thread.sleep(2000); // Give time for account to appear in list
+      try {
+        Thread.sleep(2000); // Give time for account to appear in list
+      } catch (InterruptedException ie) {
+        Thread.currentThread().interrupt();
+      }
       longWait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".acct")));
     }
     
