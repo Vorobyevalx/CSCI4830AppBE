@@ -22,12 +22,14 @@ import org.openqa.selenium.Keys;
 import java.util.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import io.github.bonigarcia.wdm.WebDriverManager;
 public class Test4CreateDepositTest {
   private WebDriver driver;
   private Map<String, Object> vars;
   JavascriptExecutor js;
   @Before
   public void setUp() {
+    WebDriverManager.firefoxdriver().setup();
     driver = new FirefoxDriver();
     js = (JavascriptExecutor) driver;
     vars = new HashMap<String, Object>();
