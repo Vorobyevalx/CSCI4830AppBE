@@ -283,20 +283,53 @@ public class Test4CreateDepositTest {
       amountInput = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".form-group:nth-child(2) input[type='number']")));
     }
     
-    // Clear and set amount
+    // Clear and set amount - need to trigger React's onChange event
     amountInput.click();
-    ((JavascriptExecutor) driver).executeScript("arguments[0].value = '';", amountInput);
     amountInput.clear();
+    
+    // Use sendKeys to properly trigger React's onChange handler
     amountInput.sendKeys("100.00");
+    
+    // Wait a moment for React to process the change
+    try {
+      Thread.sleep(500);
+    } catch (InterruptedException ie) {
+      Thread.currentThread().interrupt();
+    }
     
     // Verify amount was set
     String amountValue = amountInput.getAttribute("value");
-    System.out.println("Amount input value: " + amountValue);
-    if (!amountValue.contains("100")) {
-      // Try setting via JavaScript
-      ((JavascriptExecutor) driver).executeScript("arguments[0].value = '100.00';", amountInput);
+    System.out.println("Amount input value after sendKeys: " + amountValue);
+    
+    // If still empty, try triggering React's onChange event manually
+    if (amountValue == null || amountValue.isEmpty() || !amountValue.contains("100")) {
+      System.out.println("Amount not set via sendKeys, trying JavaScript with React event...");
+      // Set value and trigger React's onChange event
+      ((JavascriptExecutor) driver).executeScript(
+        "var input = arguments[0];" +
+        "var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;" +
+        "nativeInputValueSetter.call(input, '100.00');" +
+        "var event = new Event('input', { bubbles: true });" +
+        "input.dispatchEvent(event);" +
+        "var changeEvent = new Event('change', { bubbles: true });" +
+        "input.dispatchEvent(changeEvent);",
+        amountInput
+      );
+      
+      // Wait for React to process
+      try {
+        Thread.sleep(500);
+      } catch (InterruptedException ie) {
+        Thread.currentThread().interrupt();
+      }
+      
       amountValue = amountInput.getAttribute("value");
-      System.out.println("Amount after JS set: " + amountValue);
+      System.out.println("Amount after JS + React event: " + amountValue);
+    }
+    
+    // Final verification
+    if (amountValue == null || amountValue.isEmpty() || !amountValue.contains("100")) {
+      throw new RuntimeException("Failed to set amount value. Current value: '" + amountValue + "'");
     }
     
     // Optional: Add description
