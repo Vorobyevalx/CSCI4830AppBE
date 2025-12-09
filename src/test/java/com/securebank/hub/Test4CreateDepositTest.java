@@ -76,29 +76,42 @@ public class Test4CreateDepositTest {
     wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".page-title")));
     
     // Check if admin user has accounts, if not create one
+    boolean hasAccounts = false;
     try {
       // Wait a bit to see if accounts load
       Thread.sleep(2000);
-      wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".acct")));
-      // User has accounts, select first one
-      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".acct:first-child")));
-      driver.findElement(By.cssSelector(".acct:first-child")).click();
-      // Wait for account details to load
-      wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".detail-actions")));
+      // Check if any account elements exist
+      java.util.List<WebElement> accounts = driver.findElements(By.cssSelector(".acct"));
+      if (accounts.size() > 0 && !accounts.get(0).getText().contains("No accounts")) {
+        hasAccounts = true;
+      }
     } catch (Exception e) {
+      // No accounts found
+      hasAccounts = false;
+    }
+    
+    if (!hasAccounts) {
       // No accounts found, create one first
       System.out.println("No accounts found, creating account first...");
       
-      // Click "New Account" button (first button in card-head)
-      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".card-head .btn-secondary")));
-      driver.findElement(By.cssSelector(".card-head .btn-secondary")).click();
+      // Click "New Account" button (button with text "New Account" in card-head)
+      wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".card-head")));
+      java.util.List<WebElement> buttons = driver.findElements(By.cssSelector(".card-head .btn-secondary"));
+      for (WebElement btn : buttons) {
+        if (btn.getText().contains("New Account") || btn.getText().contains("Account")) {
+          wait.until(ExpectedConditions.elementToBeClickable(btn));
+          btn.click();
+          break;
+        }
+      }
       
-      // Wait for account form (it also uses transaction-form class)
-      wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".transaction-form")));
-      wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".transaction-form select")));
+      // Wait for account form (it uses transaction-form class)
+      WebDriverWait formWait = new WebDriverWait(driver, Duration.ofSeconds(15));
+      formWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".transaction-form")));
+      formWait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-form select")));
       
       // Select account type
-      WebElement accountTypeSelect = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-form select")));
+      WebElement accountTypeSelect = driver.findElement(By.cssSelector(".transaction-form select"));
       Select accountSelect = new Select(accountTypeSelect);
       accountSelect.selectByValue("CHECKING");
       
@@ -109,13 +122,14 @@ public class Test4CreateDepositTest {
       // Wait for success and account to appear (with longer timeout)
       WebDriverWait longWait = new WebDriverWait(driver, Duration.ofSeconds(20));
       longWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".alert-success")));
-      longWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".acct")));
-      
-      // Now select the account
-      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".acct:first-child")));
-      driver.findElement(By.cssSelector(".acct:first-child")).click();
-      wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".detail-actions")));
+      Thread.sleep(2000); // Give time for account to appear in list
+      longWait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".acct")));
     }
+    
+    // Now select the first account
+    wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".acct:first-child")));
+    driver.findElement(By.cssSelector(".acct:first-child")).click();
+    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".detail-actions")));
     
     // Click "New Transaction" button
     wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".btn-secondary:nth-child(2)")));
