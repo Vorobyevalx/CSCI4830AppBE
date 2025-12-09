@@ -140,12 +140,27 @@ public class Test4CreateDepositTest {
     wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".detail-actions")));
     
     // Click "New Transaction" button
-    wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".btn-secondary:nth-child(2)")));
-    driver.findElement(By.cssSelector(".btn-secondary:nth-child(2)")).click();
+    // The button is in .detail-actions, second button (index 1)
+    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".detail-actions")));
+    java.util.List<WebElement> detailButtons = driver.findElements(By.cssSelector(".detail-actions .btn"));
+    WebElement newTransactionBtn = null;
+    for (WebElement btn : detailButtons) {
+      if (btn.getText().contains("New Transaction") || btn.getText().contains("Transaction")) {
+        newTransactionBtn = btn;
+        break;
+      }
+    }
+    if (newTransactionBtn == null) {
+      // Fallback to second button
+      newTransactionBtn = detailButtons.get(1);
+    }
+    wait.until(ExpectedConditions.elementToBeClickable(newTransactionBtn));
+    newTransactionBtn.click();
     
-    // Wait for transaction form to appear
-    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".transaction-form")));
-    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".transaction-form select")));
+    // Wait for transaction form to appear (with longer timeout)
+    WebDriverWait formWait = new WebDriverWait(driver, Duration.ofSeconds(15));
+    formWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".transaction-form")));
+    formWait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-form select")));
     
     // Select DEPOSIT from transaction type dropdown
     WebElement transactionTypeSelect = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-form select")));
