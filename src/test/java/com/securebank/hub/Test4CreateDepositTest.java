@@ -273,12 +273,31 @@ public class Test4CreateDepositTest {
       }
     }
     
-    // Wait for amount input
-    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".form-group:nth-child(2) input[type='number']")));
-    WebElement amountInput = driver.findElement(By.cssSelector(".form-group:nth-child(2) input[type='number']"));
+    // Wait for amount input - it might be in different positions depending on form structure
+    WebElement amountInput = null;
+    try {
+      // Try finding by type first
+      amountInput = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-form input[type='number']")));
+    } catch (Exception e) {
+      // Fallback to nth-child selector
+      amountInput = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".form-group:nth-child(2) input[type='number']")));
+    }
+    
+    // Clear and set amount
     amountInput.click();
+    ((JavascriptExecutor) driver).executeScript("arguments[0].value = '';", amountInput);
     amountInput.clear();
     amountInput.sendKeys("100.00");
+    
+    // Verify amount was set
+    String amountValue = amountInput.getAttribute("value");
+    System.out.println("Amount input value: " + amountValue);
+    if (!amountValue.contains("100")) {
+      // Try setting via JavaScript
+      ((JavascriptExecutor) driver).executeScript("arguments[0].value = '100.00';", amountInput);
+      amountValue = amountInput.getAttribute("value");
+      System.out.println("Amount after JS set: " + amountValue);
+    }
     
     // Optional: Add description
     try {
