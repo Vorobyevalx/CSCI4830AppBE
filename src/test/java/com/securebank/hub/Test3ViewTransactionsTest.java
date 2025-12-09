@@ -66,30 +66,56 @@ public class Test3ViewTransactionsTest {
     // Wait for dashboard to load
     wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".page-title")));
     
-    // Navigate to Transactions page
-    // Look for navigation items or "View Transactions" button
-    try {
-      // Try finding nav items first
-      List<WebElement> navItems = driver.findElements(By.cssSelector(".nav-item, [class*='nav']"));
-      if (navItems.size() >= 2) {
-        wait.until(ExpectedConditions.elementToBeClickable(navItems.get(1)));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", navItems.get(1));
-      } else {
-        // Try finding "View Transactions" button
-        WebElement viewTransactionsBtn = wait.until(ExpectedConditions.elementToBeClickable(
-          By.xpath("//button[contains(.,'View Transactions') or contains(.,'Transactions')]")));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", viewTransactionsBtn);
+    // Wait for sidebar navigation to be visible
+    wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".nav")));
+    
+    // Navigate to Transactions page via sidebar navigation
+    // Find the "Transactions" nav button (second nav-item)
+    List<WebElement> navItems = driver.findElements(By.cssSelector(".nav-item"));
+    assertTrue("Should have navigation items", navItems.size() >= 2);
+    
+    // Find the Transactions button (should be the second one)
+    WebElement transactionsNavBtn = null;
+    for (WebElement navItem : navItems) {
+      String text = navItem.getText();
+      if (text != null && text.contains("Transactions")) {
+        transactionsNavBtn = navItem;
+        break;
       }
-    } catch (Exception e) {
-      // If navigation fails, try direct URL or look for transactions section
-      System.out.println("Could not find navigation, trying alternative method");
     }
     
-    // Wait for transactions page to load
-    wait.until(ExpectedConditions.or(
-      ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-item, .transaction-row, [class*='transaction']")),
-      ExpectedConditions.presenceOfElementLocated(By.cssSelector(".quick-filter-btn"))
-    ));
+    // If not found by text, use the second nav item
+    if (transactionsNavBtn == null) {
+      transactionsNavBtn = navItems.get(1);
+    }
+    
+    // Click the Transactions navigation button
+    wait.until(ExpectedConditions.elementToBeClickable(transactionsNavBtn));
+    ((JavascriptExecutor) driver).executeScript("arguments[0].click();", transactionsNavBtn);
+    
+    // Wait for transactions page to load - look for page title first
+    wait.until(ExpectedConditions.textToBePresentInElementLocated(
+      By.cssSelector(".page-title"), "Transactions"));
+    
+    // Wait for transactions content to load (either transactions list or quick filter buttons)
+    WebDriverWait longWait = new WebDriverWait(driver, Duration.ofSeconds(15));
+    try {
+      longWait.until(ExpectedConditions.or(
+        ExpectedConditions.presenceOfElementLocated(By.cssSelector(".quick-filter-btn")),
+        ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-item")),
+        ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-row")),
+        ExpectedConditions.presenceOfElementLocated(By.cssSelector("[class*='transaction']"))
+      ));
+    } catch (Exception e) {
+      // If transactions page elements not found, check if page title is correct
+      WebElement pageTitle = driver.findElement(By.cssSelector(".page-title"));
+      String titleText = pageTitle.getText();
+      if (titleText.contains("Transactions")) {
+        System.out.println("Transactions page loaded but no transactions found (may be empty)");
+      } else {
+        throw new RuntimeException("Transactions page did not load. Current page title: " + titleText, e);
+      }
+    }
     
     // Test quick filter buttons if available
     List<WebElement> quickFilterBtns = driver.findElements(By.cssSelector(".quick-filter-btn"));
