@@ -56,18 +56,18 @@ public class Test4CreateDepositTest {
     driver.get("http://34.42.31.237:8080/");
     driver.manage().window().setSize(new Dimension(968, 877));
     
-    // Wait for login page and login
+    // Wait for login page and login as ADMIN user (needed to see DEPOSIT option)
     wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("input[type='text']")));
     WebElement usernameInput = driver.findElement(By.cssSelector("input[type='text']"));
     usernameInput.click();
     usernameInput.clear();
-    usernameInput.sendKeys("testuser");
+    usernameInput.sendKeys("adminuser"); // Use admin user to see DEPOSIT option
     
     wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("input[type='password']")));
     WebElement passwordInput = driver.findElement(By.cssSelector("input[type='password']"));
     passwordInput.click();
     passwordInput.clear();
-    passwordInput.sendKeys("password123");
+    passwordInput.sendKeys("admin123");
     
     wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("button[type='submit']")));
     driver.findElement(By.cssSelector("button[type='submit']")).click();
