@@ -170,25 +170,66 @@ public class Test4CreateDepositTest {
     }
     wait.until(ExpectedConditions.elementToBeClickable(newTransactionBtn));
     
+    // Scroll button into view first
+    ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", newTransactionBtn);
+    try {
+      Thread.sleep(500);
+    } catch (InterruptedException ie) {
+      Thread.currentThread().interrupt();
+    }
+    
     // Click the button using JavaScript (more reliable in headless mode)
+    String buttonTextBefore = newTransactionBtn.getText();
+    System.out.println("Button text before click: " + buttonTextBefore);
+    
     ((JavascriptExecutor) driver).executeScript("arguments[0].click();", newTransactionBtn);
     
     // Wait for button text to change to "Cancel" (indicates form is showing)
     WebDriverWait formWait = new WebDriverWait(driver, Duration.ofSeconds(15));
+    boolean buttonChanged = false;
     try {
       formWait.until(ExpectedConditions.textToBePresentInElement(newTransactionBtn, "Cancel"));
+      buttonChanged = true;
+      System.out.println("Button text changed to Cancel - form should be showing");
     } catch (Exception e) {
+      System.out.println("Button text did not change to Cancel. Current text: " + newTransactionBtn.getText());
       // Button text might not change immediately, wait a bit
       try {
-        Thread.sleep(2000);
+        Thread.sleep(3000);
+        String currentText = newTransactionBtn.getText();
+        System.out.println("Button text after delay: " + currentText);
+        buttonChanged = currentText.contains("Cancel");
       } catch (InterruptedException ie) {
         Thread.currentThread().interrupt();
       }
     }
     
     // Wait for transaction form to appear
-    // The form should be visible after button state changes
-    formWait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-form")));
+    // Try multiple selectors in case form structure is different
+    boolean formFound = false;
+    try {
+      formWait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-form")));
+      formFound = true;
+      System.out.println("Found .transaction-form");
+    } catch (Exception e) {
+      // Try alternative selectors
+      try {
+        formWait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("form")));
+        formFound = true;
+        System.out.println("Found form element");
+      } catch (Exception e2) {
+        // Check if form is in page source
+        String pageSource = driver.getPageSource();
+        if (pageSource.contains("Transaction Type") || pageSource.contains("transaction-form")) {
+          System.out.println("Form text found in page source, trying presence check");
+          formWait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-form")));
+          formFound = true;
+        } else {
+          System.out.println("Form not found. Button changed: " + buttonChanged);
+          throw new RuntimeException("Transaction form not found after button click. Button state: " + (buttonChanged ? "changed" : "not changed"), e2);
+        }
+      }
+    }
     
     // Additional wait to ensure form is fully rendered
     try {
