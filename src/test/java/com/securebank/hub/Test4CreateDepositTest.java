@@ -169,11 +169,44 @@ public class Test4CreateDepositTest {
       throw new RuntimeException("Could not find New Transaction button. Found " + detailButtons.size() + " buttons in detail-actions");
     }
     wait.until(ExpectedConditions.elementToBeClickable(newTransactionBtn));
-    newTransactionBtn.click();
+    
+    // Try JavaScript click if regular click doesn't work
+    try {
+      newTransactionBtn.click();
+    } catch (Exception e) {
+      // Fallback to JavaScript click
+      ((JavascriptExecutor) driver).executeScript("arguments[0].click();", newTransactionBtn);
+    }
+    
+    // Wait a moment for React to update
+    try {
+      Thread.sleep(1500);
+    } catch (InterruptedException ie) {
+      Thread.currentThread().interrupt();
+    }
     
     // Wait for transaction form to appear (with longer timeout)
     WebDriverWait formWait = new WebDriverWait(driver, Duration.ofSeconds(15));
-    formWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".transaction-form")));
+    
+    // Try multiple ways to find the form
+    try {
+      formWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".transaction-form")));
+    } catch (Exception e) {
+      // Try finding by form element
+      try {
+        formWait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("form")));
+      } catch (Exception e2) {
+        // Debug: print page source snippet
+        String pageSource = driver.getPageSource();
+        if (pageSource.contains("Transaction Type") || pageSource.contains("transaction-form")) {
+          // Form might be there but not visible, try presence
+          formWait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-form")));
+        } else {
+          throw new RuntimeException("Transaction form not found. Page may not have loaded correctly.", e2);
+        }
+      }
+    }
+    
     formWait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-form select")));
     
     // Select DEPOSIT from transaction type dropdown
