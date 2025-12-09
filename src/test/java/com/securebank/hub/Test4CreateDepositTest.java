@@ -294,12 +294,13 @@ public class Test4CreateDepositTest {
     // Submit the form
     wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".transaction-form button[type='submit']")));
     WebElement submitBtn = driver.findElement(By.cssSelector(".transaction-form button[type='submit']"));
+    System.out.println("Submitting form...");
     ((JavascriptExecutor) driver).executeScript("arguments[0].click();", submitBtn);
     
     // Wait for either success or error message (with longer timeout for API call)
     WebDriverWait messageWait = new WebDriverWait(driver, Duration.ofSeconds(20));
     try {
-      // Wait for success message
+      // Wait for success or error message
       messageWait.until(ExpectedConditions.or(
         ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".alert-success")),
         ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".alert-error"))
@@ -310,22 +311,41 @@ public class Test4CreateDepositTest {
       java.util.List<WebElement> errorAlerts = driver.findElements(By.cssSelector(".alert-error"));
       
       if (successAlerts.size() > 0 && successAlerts.get(0).isDisplayed()) {
-        System.out.println("Success message found: " + successAlerts.get(0).getText());
+        String successText = successAlerts.get(0).getText();
+        System.out.println("Success message found: " + successText);
         assertTrue("Transaction should succeed", true);
       } else if (errorAlerts.size() > 0 && errorAlerts.get(0).isDisplayed()) {
         String errorText = errorAlerts.get(0).getText();
         System.out.println("Error message found: " + errorText);
-        // For now, fail the test if there's an error
-        // In the future, we could handle specific errors differently
         throw new RuntimeException("Transaction failed with error: " + errorText);
       } else {
         throw new RuntimeException("Neither success nor error message appeared after form submission");
       }
     } catch (org.openqa.selenium.TimeoutException e) {
-      // Check if form is still there (might indicate validation error)
+      // Check if form is still there and look for error messages
       java.util.List<WebElement> forms = driver.findElements(By.cssSelector(".transaction-form"));
       if (forms.size() > 0) {
-        throw new RuntimeException("Form still visible after submission - transaction may have failed validation");
+        // Look for any error messages in the form
+        java.util.List<WebElement> errorMessages = driver.findElements(By.cssSelector(".transaction-form .alert-error"));
+        if (errorMessages.size() > 0) {
+          String errorText = errorMessages.get(0).getText();
+          System.out.println("Error message in form: " + errorText);
+          throw new RuntimeException("Transaction failed with error: " + errorText);
+        }
+        
+        // Check if submit button is disabled (might indicate loading or validation)
+        WebElement submitButton = driver.findElement(By.cssSelector(".transaction-form button[type='submit']"));
+        String buttonText = submitButton.getText();
+        boolean isDisabled = !submitButton.isEnabled();
+        System.out.println("Form still visible. Submit button text: '" + buttonText + "', disabled: " + isDisabled);
+        
+        // Get page source snippet for debugging
+        String pageSource = driver.getPageSource();
+        if (pageSource.contains("alert-error") || pageSource.contains("error")) {
+          System.out.println("Error found in page source");
+        }
+        
+        throw new RuntimeException("Form still visible after submission - transaction may have failed. Button state: " + buttonText + (isDisabled ? " (disabled)" : ""));
       }
       throw e;
     }
