@@ -170,43 +170,34 @@ public class Test4CreateDepositTest {
     }
     wait.until(ExpectedConditions.elementToBeClickable(newTransactionBtn));
     
-    // Try JavaScript click if regular click doesn't work
+    // Click the button using JavaScript (more reliable in headless mode)
+    ((JavascriptExecutor) driver).executeScript("arguments[0].click();", newTransactionBtn);
+    
+    // Wait for button text to change to "Cancel" (indicates form is showing)
+    WebDriverWait formWait = new WebDriverWait(driver, Duration.ofSeconds(15));
     try {
-      newTransactionBtn.click();
+      formWait.until(ExpectedConditions.textToBePresentInElement(newTransactionBtn, "Cancel"));
     } catch (Exception e) {
-      // Fallback to JavaScript click
-      ((JavascriptExecutor) driver).executeScript("arguments[0].click();", newTransactionBtn);
+      // Button text might not change immediately, wait a bit
+      try {
+        Thread.sleep(2000);
+      } catch (InterruptedException ie) {
+        Thread.currentThread().interrupt();
+      }
     }
     
-    // Wait a moment for React to update
+    // Wait for transaction form to appear
+    // The form should be visible after button state changes
+    formWait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-form")));
+    
+    // Additional wait to ensure form is fully rendered
     try {
-      Thread.sleep(1500);
+      Thread.sleep(1000);
     } catch (InterruptedException ie) {
       Thread.currentThread().interrupt();
     }
     
-    // Wait for transaction form to appear (with longer timeout)
-    WebDriverWait formWait = new WebDriverWait(driver, Duration.ofSeconds(15));
-    
-    // Try multiple ways to find the form
-    try {
-      formWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".transaction-form")));
-    } catch (Exception e) {
-      // Try finding by form element
-      try {
-        formWait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("form")));
-      } catch (Exception e2) {
-        // Debug: print page source snippet
-        String pageSource = driver.getPageSource();
-        if (pageSource.contains("Transaction Type") || pageSource.contains("transaction-form")) {
-          // Form might be there but not visible, try presence
-          formWait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-form")));
-        } else {
-          throw new RuntimeException("Transaction form not found. Page may not have loaded correctly.", e2);
-        }
-      }
-    }
-    
+    // Verify form select is present
     formWait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-form select")));
     
     // Select DEPOSIT from transaction type dropdown
