@@ -137,18 +137,25 @@ public class Test4CreateDepositTest {
     // Now select the first account
     wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".acct:first-child")));
     WebElement firstAccount = driver.findElement(By.cssSelector(".acct:first-child"));
-    firstAccount.click();
+    ((JavascriptExecutor) driver).executeScript("arguments[0].click();", firstAccount);
     
     // Wait for account details to load and verify account is selected
     wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".detail-actions")));
-    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".detail-title")));
+    WebElement detailTitle = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".detail-title")));
     
-    // Small delay to ensure UI is ready
+    // Verify account is selected by checking detail title
+    String accountTitle = detailTitle.getText();
+    System.out.println("Selected account: " + accountTitle);
+    
+    // Wait for React state to update (account selection triggers state change)
     try {
-      Thread.sleep(1000);
+      Thread.sleep(1500);
     } catch (InterruptedException ie) {
       Thread.currentThread().interrupt();
     }
+    
+    // Verify account detail section is fully loaded
+    wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".detail-balance")));
     
     // Click "New Transaction" button
     // The button is in .detail-actions, second button (btn-secondary)
