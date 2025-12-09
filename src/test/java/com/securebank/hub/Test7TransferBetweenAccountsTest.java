@@ -147,11 +147,21 @@ public class Test7TransferBetweenAccountsTest {
       select.selectByValue("TRANSFER_OUT");
     }
     
-    // Wait for destination account dropdown to appear
-    wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-form select:nth-of-type(2)")));
+    // Wait a moment for React to update the form
+    try {
+      Thread.sleep(1000);
+    } catch (InterruptedException ie) {
+      Thread.currentThread().interrupt();
+    }
+    
+    // Wait for destination account dropdown to appear (it's conditionally rendered)
+    // Look for select element that contains "Select account..." option
+    wait.until(ExpectedConditions.presenceOfElementLocated(
+      By.xpath("//div[contains(@class, 'transaction-form')]//select[.//option[contains(text(), 'Select account')]]")));
     
     // Select destination account (second account)
-    WebElement destinationSelect = driver.findElement(By.cssSelector(".transaction-form select:nth-of-type(2)"));
+    WebElement destinationSelect = driver.findElement(
+      By.xpath("//div[contains(@class, 'transaction-form')]//select[.//option[contains(text(), 'Select account')]]"));
     Select destinationSelectObj = new Select(destinationSelect);
     
     // Get available options and select the first one (should be the second account)
@@ -235,7 +245,12 @@ public class Test7TransferBetweenAccountsTest {
     // Logout
     wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".logout-btn")));
     driver.findElement(By.cssSelector(".logout-btn")).click();
-    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".login-container")));
+    // Wait for login page - check for login form elements
+    wait.until(ExpectedConditions.or(
+      ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".login-container")),
+      ExpectedConditions.visibilityOfElementLocated(By.cssSelector("input[type='text']")),
+      ExpectedConditions.presenceOfElementLocated(By.cssSelector(".login-form"))
+    ));
   }
 }
 

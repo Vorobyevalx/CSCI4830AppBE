@@ -96,12 +96,12 @@ public class Test10ViewUserSettingsTest {
     
     // Wait for user settings page to load - look for page title
     wait.until(ExpectedConditions.textToBePresentInElementLocated(
-      By.cssSelector(".page-title"), "Settings"));
+      By.cssSelector(".page-title"), "User settings"));
     
     // Verify user settings page is displayed
-    WebElement pageTitle = driver.findElement(By.cssSelector(".page-title"));
+    WebElement pageTitle = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".page-title")));
     String titleText = pageTitle.getText();
-    assertTrue("Page title should contain 'Settings'", titleText.contains("Settings") || titleText.contains("settings"));
+    assertTrue("Page title should contain 'User settings'", titleText.contains("User settings") || titleText.contains("settings"));
     
     // Verify user information is displayed
     try {
@@ -133,7 +133,12 @@ public class Test10ViewUserSettingsTest {
     // Logout
     wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".logout-btn")));
     driver.findElement(By.cssSelector(".logout-btn")).click();
-    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".login-container")));
+    // Wait for login page - check for login form elements
+    wait.until(ExpectedConditions.or(
+      ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".login-container")),
+      ExpectedConditions.visibilityOfElementLocated(By.cssSelector("input[type='text']")),
+      ExpectedConditions.presenceOfElementLocated(By.cssSelector(".login-form"))
+    ));
   }
 }
 

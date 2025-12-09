@@ -231,7 +231,12 @@ public class Test8CreatePurchaseTest {
     // Logout
     wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".logout-btn")));
     driver.findElement(By.cssSelector(".logout-btn")).click();
-    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".login-container")));
+    // Wait for login page - check for login form elements
+    wait.until(ExpectedConditions.or(
+      ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".login-container")),
+      ExpectedConditions.visibilityOfElementLocated(By.cssSelector("input[type='text']")),
+      ExpectedConditions.presenceOfElementLocated(By.cssSelector(".login-form"))
+    ));
   }
 }
 

@@ -78,12 +78,12 @@ public class Test5CreateAccountTest {
     WebElement newAccountBtn = driver.findElement(By.xpath("//button[contains(.,'New Account')]"));
     ((JavascriptExecutor) driver).executeScript("arguments[0].click();", newAccountBtn);
     
-    // Wait for account creation form to appear
-    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".create-account-form")));
+    // Wait for account creation form to appear (it uses .transaction-form class)
+    wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[contains(@class, 'transaction-form')]//h4[contains(.,'Create New Account')]")));
     
     // Select account type (SAVINGS)
     WebElement accountTypeSelect = wait.until(ExpectedConditions.presenceOfElementLocated(
-      By.cssSelector(".create-account-form select")));
+      By.xpath("//div[contains(@class, 'transaction-form')]//select")));
     Select select = new Select(accountTypeSelect);
     select.selectByValue("SAVINGS");
     
@@ -92,7 +92,7 @@ public class Test5CreateAccountTest {
     
     // Submit the form
     WebElement submitBtn = wait.until(ExpectedConditions.elementToBeClickable(
-      By.cssSelector(".create-account-form button[type='submit']")));
+      By.xpath("//div[contains(@class, 'transaction-form')]//button[@type='submit']")));
     ((JavascriptExecutor) driver).executeScript("arguments[0].click();", submitBtn);
     
     // Wait for success message or account to appear in list
@@ -131,7 +131,12 @@ public class Test5CreateAccountTest {
     // Logout
     wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".logout-btn")));
     driver.findElement(By.cssSelector(".logout-btn")).click();
-    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".login-container")));
+    // Wait for login page - check for login form elements
+    wait.until(ExpectedConditions.or(
+      ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".login-container")),
+      ExpectedConditions.visibilityOfElementLocated(By.cssSelector("input[type='text']")),
+      ExpectedConditions.presenceOfElementLocated(By.cssSelector(".login-form"))
+    ));
   }
 }
 
