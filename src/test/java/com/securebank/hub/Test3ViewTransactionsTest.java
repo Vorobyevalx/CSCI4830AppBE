@@ -22,7 +22,7 @@ import org.openqa.selenium.Keys;
 import java.util.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-public class Test1UserLoginTest {
+public class Test3ViewTransactionsTest {
   private WebDriver driver;
   private Map<String, Object> vars;
   JavascriptExecutor js;
@@ -37,22 +37,30 @@ public class Test1UserLoginTest {
     driver.quit();
   }
   @Test
-  public void test1UserLogin() {
+  public void test3ViewTransactions() {
     driver.get("http://34.42.31.237:8080/");
     driver.manage().window().setSize(new Dimension(968, 877));
     driver.findElement(By.cssSelector(".input:nth-child(2)")).click();
     driver.findElement(By.cssSelector(".input:nth-child(2)")).sendKeys("testuser");
     driver.findElement(By.cssSelector(".input:nth-child(2)")).sendKeys(Keys.ENTER);
-    driver.findElement(By.cssSelector(".input:nth-child(1)")).click();
     driver.findElement(By.cssSelector(".input:nth-child(1)")).sendKeys("password123");
-    driver.findElement(By.cssSelector(".login-form")).click();
+    driver.findElement(By.cssSelector(".input:nth-child(1)")).click();
     driver.findElement(By.cssSelector(".btn")).click();
+    driver.findElement(By.cssSelector(".nav-item:nth-child(2)")).click();
+    driver.findElement(By.cssSelector(".quick-filter-btn:nth-child(2)")).click();
+    driver.findElement(By.cssSelector(".quick-filter-btn:nth-child(3)")).click();
+    driver.findElement(By.cssSelector(".quick-filter-btn:nth-child(4)")).click();
+    driver.findElement(By.cssSelector(".quick-filter-btn:nth-child(1)")).click();
     {
-      WebElement element = driver.findElement(By.cssSelector(".btn"));
+      WebElement element = driver.findElement(By.cssSelector(".quick-filter-btn:nth-child(1)"));
       Actions builder = new Actions(driver);
       builder.moveToElement(element).perform();
     }
-    driver.findElement(By.cssSelector(".active")).click();
+    {
+      WebElement element = driver.findElement(By.tagName("body"));
+      Actions builder = new Actions(driver);
+      builder.moveToElement(element, 0, 0).perform();
+    }
     driver.findElement(By.cssSelector(".logout-btn")).click();
     driver.close();
   }

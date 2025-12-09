@@ -22,7 +22,7 @@ import org.openqa.selenium.Keys;
 import java.util.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-public class Test1UserLoginTest {
+public class Test2ViewAccountDetailsTest {
   private WebDriver driver;
   private Map<String, Object> vars;
   JavascriptExecutor js;
@@ -37,23 +37,23 @@ public class Test1UserLoginTest {
     driver.quit();
   }
   @Test
-  public void test1UserLogin() {
+  public void test2ViewAccountDetails() {
     driver.get("http://34.42.31.237:8080/");
     driver.manage().window().setSize(new Dimension(968, 877));
+    driver.findElement(By.cssSelector(".login-form")).click();
     driver.findElement(By.cssSelector(".input:nth-child(2)")).click();
     driver.findElement(By.cssSelector(".input:nth-child(2)")).sendKeys("testuser");
-    driver.findElement(By.cssSelector(".input:nth-child(2)")).sendKeys(Keys.ENTER);
+    driver.findElement(By.cssSelector(".field:nth-child(1) > .label")).click();
+    driver.findElement(By.cssSelector(".field:nth-child(2)")).click();
     driver.findElement(By.cssSelector(".input:nth-child(1)")).click();
     driver.findElement(By.cssSelector(".input:nth-child(1)")).sendKeys("password123");
-    driver.findElement(By.cssSelector(".login-form")).click();
     driver.findElement(By.cssSelector(".btn")).click();
-    {
-      WebElement element = driver.findElement(By.cssSelector(".btn"));
-      Actions builder = new Actions(driver);
-      builder.moveToElement(element).perform();
-    }
-    driver.findElement(By.cssSelector(".active")).click();
+    driver.findElement(By.cssSelector(".selected > .acct-nick")).click();
+    driver.findElement(By.cssSelector(".acct:nth-child(2) > .acct-nick")).click();
+    driver.findElement(By.cssSelector(".acct:nth-child(3) > .acct-nick")).click();
+    driver.findElement(By.cssSelector(".acct:nth-child(4) > .acct-type")).click();
     driver.findElement(By.cssSelector(".logout-btn")).click();
+    driver.findElement(By.cssSelector(".input:nth-child(2)")).click();
     driver.close();
   }
 }
