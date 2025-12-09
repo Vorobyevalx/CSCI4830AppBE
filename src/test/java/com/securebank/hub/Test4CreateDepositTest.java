@@ -93,9 +93,29 @@ public class Test4CreateDepositTest {
     // Select DEPOSIT from transaction type dropdown
     WebElement transactionTypeSelect = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-form select")));
     // Use Select class for better dropdown handling
-    org.openqa.selenium.support.ui.Select select = new org.openqa.selenium.support.ui.Select(transactionTypeSelect);
+    Select select = new Select(transactionTypeSelect);
     wait.until(ExpectedConditions.elementToBeClickable(transactionTypeSelect));
-    select.selectByValue("DEPOSIT");
+    
+    // Wait for options to be available, then select by visible text (more reliable)
+    wait.until(ExpectedConditions.presenceOfNestedElementLocatedBy(transactionTypeSelect, By.cssSelector("option")));
+    
+    // Try to select by visible text first (works for both admin and customer)
+    try {
+      select.selectByVisibleText("Deposit");
+    } catch (Exception e) {
+      // If Deposit not available (customer role), try by value
+      try {
+        select.selectByValue("DEPOSIT");
+      } catch (Exception e2) {
+        // If still fails, list available options for debugging
+        java.util.List<WebElement> options = select.getOptions();
+        System.out.println("Available options:");
+        for (WebElement opt : options) {
+          System.out.println("  - " + opt.getText() + " (value: " + opt.getAttribute("value") + ")");
+        }
+        throw new RuntimeException("Could not select DEPOSIT. Available options listed above.", e2);
+      }
+    }
     
     // Wait for amount input
     wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".form-group:nth-child(2) input[type='number']")));
