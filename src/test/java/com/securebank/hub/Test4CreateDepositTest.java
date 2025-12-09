@@ -136,23 +136,37 @@ public class Test4CreateDepositTest {
     
     // Now select the first account
     wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".acct:first-child")));
-    driver.findElement(By.cssSelector(".acct:first-child")).click();
+    WebElement firstAccount = driver.findElement(By.cssSelector(".acct:first-child"));
+    firstAccount.click();
+    
+    // Wait for account details to load and verify account is selected
     wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".detail-actions")));
+    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".detail-title")));
+    
+    // Small delay to ensure UI is ready
+    try {
+      Thread.sleep(1000);
+    } catch (InterruptedException ie) {
+      Thread.currentThread().interrupt();
+    }
     
     // Click "New Transaction" button
-    // The button is in .detail-actions, second button (index 1)
-    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".detail-actions")));
+    // The button is in .detail-actions, find by text
     java.util.List<WebElement> detailButtons = driver.findElements(By.cssSelector(".detail-actions .btn"));
     WebElement newTransactionBtn = null;
     for (WebElement btn : detailButtons) {
-      if (btn.getText().contains("New Transaction") || btn.getText().contains("Transaction")) {
+      String btnText = btn.getText();
+      if (btnText.contains("New Transaction") || btnText.contains("Transaction")) {
         newTransactionBtn = btn;
         break;
       }
     }
-    if (newTransactionBtn == null) {
-      // Fallback to second button
+    if (newTransactionBtn == null && detailButtons.size() >= 2) {
+      // Fallback to second button (usually the New Transaction button)
       newTransactionBtn = detailButtons.get(1);
+    }
+    if (newTransactionBtn == null) {
+      throw new RuntimeException("Could not find New Transaction button. Found " + detailButtons.size() + " buttons in detail-actions");
     }
     wait.until(ExpectedConditions.elementToBeClickable(newTransactionBtn));
     newTransactionBtn.click();
