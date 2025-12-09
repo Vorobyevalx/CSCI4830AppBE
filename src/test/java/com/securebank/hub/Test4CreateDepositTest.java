@@ -151,23 +151,28 @@ public class Test4CreateDepositTest {
     }
     
     // Click "New Transaction" button
-    // The button is in .detail-actions, find by text
-    java.util.List<WebElement> detailButtons = driver.findElements(By.cssSelector(".detail-actions .btn"));
-    WebElement newTransactionBtn = null;
-    for (WebElement btn : detailButtons) {
-      String btnText = btn.getText();
-      if (btnText.contains("New Transaction") || btnText.contains("Transaction")) {
-        newTransactionBtn = btn;
-        break;
+    // The button is in .detail-actions, second button (btn-secondary)
+    wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".detail-actions .btn-secondary")));
+    WebElement newTransactionBtn = driver.findElement(By.cssSelector(".detail-actions .btn-secondary"));
+    
+    // Verify it's the right button
+    String buttonTextBefore = newTransactionBtn.getText();
+    System.out.println("Button text before click: " + buttonTextBefore);
+    
+    if (!buttonTextBefore.contains("New Transaction") && !buttonTextBefore.contains("Transaction")) {
+      // Try finding by text if selector got wrong button
+      java.util.List<WebElement> allButtons = driver.findElements(By.cssSelector(".detail-actions .btn"));
+      for (WebElement btn : allButtons) {
+        String text = btn.getText();
+        if (text.contains("New Transaction") || (text.contains("Transaction") && !text.contains("View"))) {
+          newTransactionBtn = btn;
+          buttonTextBefore = text;
+          System.out.println("Found correct button: " + buttonTextBefore);
+          break;
+        }
       }
     }
-    if (newTransactionBtn == null && detailButtons.size() >= 2) {
-      // Fallback to second button (usually the New Transaction button)
-      newTransactionBtn = detailButtons.get(1);
-    }
-    if (newTransactionBtn == null) {
-      throw new RuntimeException("Could not find New Transaction button. Found " + detailButtons.size() + " buttons in detail-actions");
-    }
+    
     wait.until(ExpectedConditions.elementToBeClickable(newTransactionBtn));
     
     // Scroll button into view first
@@ -179,28 +184,28 @@ public class Test4CreateDepositTest {
     }
     
     // Click the button using JavaScript (more reliable in headless mode)
-    String buttonTextBefore = newTransactionBtn.getText();
-    System.out.println("Button text before click: " + buttonTextBefore);
-    
     ((JavascriptExecutor) driver).executeScript("arguments[0].click();", newTransactionBtn);
     
     // Wait for button text to change to "Cancel" (indicates form is showing)
+    // Re-find the button to avoid stale element reference
     WebDriverWait formWait = new WebDriverWait(driver, Duration.ofSeconds(15));
     boolean buttonChanged = false;
     try {
-      formWait.until(ExpectedConditions.textToBePresentInElement(newTransactionBtn, "Cancel"));
+      formWait.until(ExpectedConditions.textToBePresentInElementLocated(By.cssSelector(".detail-actions .btn-secondary"), "Cancel"));
       buttonChanged = true;
       System.out.println("Button text changed to Cancel - form should be showing");
     } catch (Exception e) {
-      System.out.println("Button text did not change to Cancel. Current text: " + newTransactionBtn.getText());
-      // Button text might not change immediately, wait a bit
+      // Button text might not change immediately, wait a bit and re-check
       try {
-        Thread.sleep(3000);
-        String currentText = newTransactionBtn.getText();
+        Thread.sleep(2000);
+        WebElement buttonAfter = driver.findElement(By.cssSelector(".detail-actions .btn-secondary"));
+        String currentText = buttonAfter.getText();
         System.out.println("Button text after delay: " + currentText);
         buttonChanged = currentText.contains("Cancel");
       } catch (InterruptedException ie) {
         Thread.currentThread().interrupt();
+      } catch (Exception e2) {
+        System.out.println("Could not check button text after click");
       }
     }
     
