@@ -19,6 +19,7 @@ import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.JavascriptExecutor;
+import java.time.Duration;
 import org.openqa.selenium.Alert;
 import org.openqa.selenium.Keys;
 import java.util.*;
@@ -48,25 +49,84 @@ public class Test4CreateDepositTest {
   }
   @Test
   public void test4CreateDeposit() {
+    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    
+    // Navigate to application
     driver.get("http://34.42.31.237:8080/");
     driver.manage().window().setSize(new Dimension(968, 877));
-    driver.findElement(By.cssSelector(".input:nth-child(2)")).click();
-    driver.findElement(By.cssSelector(".input:nth-child(2)")).sendKeys("testuser");
-    driver.findElement(By.cssSelector(".input:nth-child(2)")).sendKeys(Keys.ENTER);
-    driver.findElement(By.cssSelector(".input:nth-child(1)")).click();
-    driver.findElement(By.cssSelector(".input:nth-child(1)")).sendKeys("password123");
-    driver.findElement(By.cssSelector(".btn")).click();
+    
+    // Wait for login page and login
+    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("input[type='text']")));
+    WebElement usernameInput = driver.findElement(By.cssSelector("input[type='text']"));
+    usernameInput.click();
+    usernameInput.clear();
+    usernameInput.sendKeys("testuser");
+    
+    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("input[type='password']")));
+    WebElement passwordInput = driver.findElement(By.cssSelector("input[type='password']"));
+    passwordInput.click();
+    passwordInput.clear();
+    passwordInput.sendKeys("password123");
+    
+    wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("button[type='submit']")));
+    driver.findElement(By.cssSelector("button[type='submit']")).click();
+    
+    // Wait for dashboard to load
+    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".page-title")));
+    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".acct")));
+    
+    // Select first account
+    wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".acct:first-child")));
     driver.findElement(By.cssSelector(".acct:first-child")).click();
+    // Wait for account details to load
+    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".detail-actions")));
+    
+    // Click "New Transaction" button
+    wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".btn-secondary:nth-child(2)")));
     driver.findElement(By.cssSelector(".btn-secondary:nth-child(2)")).click();
-    driver.findElement(By.cssSelector(".transaction-form select")).click();
-    {
-      WebElement dropdown = driver.findElement(By.cssSelector(".transaction-form select"));
-      dropdown.findElement(By.xpath("//option[. = 'Deposit']")).click();
+    
+    // Wait for transaction form to appear
+    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".transaction-form")));
+    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".transaction-form select")));
+    
+    // Select DEPOSIT from transaction type dropdown
+    WebElement transactionTypeSelect = driver.findElement(By.cssSelector(".transaction-form select"));
+    transactionTypeSelect.click();
+    wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("option[value='DEPOSIT']")));
+    transactionTypeSelect.findElement(By.cssSelector("option[value='DEPOSIT']")).click();
+    
+    // Wait for amount input
+    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".form-group:nth-child(2) input[type='number']")));
+    WebElement amountInput = driver.findElement(By.cssSelector(".form-group:nth-child(2) input[type='number']"));
+    amountInput.click();
+    amountInput.clear();
+    amountInput.sendKeys("100.00");
+    
+    // Optional: Add description
+    try {
+      WebElement descriptionInput = driver.findElement(By.cssSelector(".form-group:nth-child(3) input[type='text'][placeholder*='description']"));
+      if (descriptionInput.isDisplayed()) {
+        descriptionInput.click();
+        descriptionInput.sendKeys("Selenium test deposit");
+      }
+    } catch (Exception e) {
+      // Description field not required
     }
-    driver.findElement(By.cssSelector(".form-group:nth-child(2) > .form-input")).click();
-    driver.findElement(By.cssSelector(".form-group:nth-child(2) > .form-input")).sendKeys("100.00");
-    driver.findElement(By.cssSelector(".form-actions > .btn")).click();
+    
+    // Submit the form
+    wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".transaction-form button[type='submit']")));
+    driver.findElement(By.cssSelector(".transaction-form button[type='submit']")).click();
+    
+    // Wait for success message
+    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".alert-success")));
+    
+    // Verify success
+    WebElement successAlert = driver.findElement(By.cssSelector(".alert-success"));
+    assertTrue(successAlert.isDisplayed());
+    
+    // Logout
+    wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(".logout-btn")));
     driver.findElement(By.cssSelector(".logout-btn")).click();
-    driver.close();
+    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".login-container")));
   }
 }
