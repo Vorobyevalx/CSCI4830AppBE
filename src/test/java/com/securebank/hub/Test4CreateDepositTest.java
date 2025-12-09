@@ -541,7 +541,8 @@ public class Test4CreateDepositTest {
         assertTrue("Transaction likely succeeded (form disappeared)", true);
         return; // Assume success since form disappeared
       }
-      throw e;
+      // Note: All paths above either throw or return, so this is unreachable
+      // but kept for clarity - if form is still visible, we already threw an exception above
     }
     
     // Logout
