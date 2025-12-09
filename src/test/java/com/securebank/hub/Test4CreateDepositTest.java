@@ -18,6 +18,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.JavascriptExecutor;
 import java.time.Duration;
 import org.openqa.selenium.Alert;
@@ -90,10 +91,11 @@ public class Test4CreateDepositTest {
     wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".transaction-form select")));
     
     // Select DEPOSIT from transaction type dropdown
-    WebElement transactionTypeSelect = driver.findElement(By.cssSelector(".transaction-form select"));
-    transactionTypeSelect.click();
-    wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("option[value='DEPOSIT']")));
-    transactionTypeSelect.findElement(By.cssSelector("option[value='DEPOSIT']")).click();
+    WebElement transactionTypeSelect = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".transaction-form select")));
+    // Use Select class for better dropdown handling
+    org.openqa.selenium.support.ui.Select select = new org.openqa.selenium.support.ui.Select(transactionTypeSelect);
+    wait.until(ExpectedConditions.elementToBeClickable(transactionTypeSelect));
+    select.selectByValue("DEPOSIT");
     
     // Wait for amount input
     wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".form-group:nth-child(2) input[type='number']")));
